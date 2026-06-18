@@ -1,0 +1,1613 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>NUDGE - Experimental Cocktail Lab</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+    />
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        user-select: none;
+        font-family: "Helvetica Neue", Helvetica, "Pretendard", sans-serif;
+        font-weight: 900;
+        background-color: #f4f4f4;
+        color: #111;
+      }
+
+      #inkCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      #canvas {
+        z-index: 3;
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+      }
+
+      .status-box {
+        z-index: 4;
+        position: fixed;
+        top: 10%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        padding: 10px 30px;
+        background: rgba(17, 17, 17, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        border-radius: 50px;
+        font-size: 1.2rem;
+        letter-spacing: 2px;
+        pointer-events: none;
+        transition:
+          opacity 0.5s,
+          transform 0.5s,
+          color 0.5s;
+        text-transform: uppercase;
+      }
+
+      #container {
+        position: relative;
+      }
+
+      .pane {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        padding: 0 5vw;
+        box-sizing: border-box;
+      }
+
+      .first {
+        background-color: rgba(244, 244, 244, 0.8);
+      }
+      .second {
+        background-color: rgba(204, 255, 0, 0.85);
+      }
+      .third {
+        background-color: rgba(123, 44, 191, 0.85);
+        color: #fff;
+      }
+      .fourth {
+        background-color: rgba(255, 0, 127, 0.85);
+        color: #fff;
+      }
+
+      .second::before,
+      .third::before,
+      .fourth::before {
+        content: "";
+        position: absolute;
+        top: 25%;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-size: 100vw 50vh;
+        background-position: 0 0;
+        background-repeat: repeat-x;
+        opacity: 0.15;
+        z-index: 1;
+        pointer-events: none;
+        animation: slideBg 40s linear infinite;
+      }
+
+      @keyframes slideBg {
+        0% {
+          background-position: 0 0;
+        }
+        100% {
+          background-position: -100vw 0;
+        }
+      }
+
+      .second::before {
+        background-image: url("caution.png");
+      }
+      .third::before {
+        background-image: url("warning.png");
+      }
+      .fourth::before {
+        background-image: url("danger.png");
+      }
+
+      .intro-wrap {
+        position: relative;
+        z-index: 4;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .main-logo {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .subtitle {
+        font-size: 1.5rem;
+        margin-top: 10px;
+        background: #111;
+        color: #fff;
+        padding: 5px 15px;
+        display: inline-block;
+      }
+
+      /* 글라스모피즘 적용 부분 */
+      .desc-text {
+        opacity: 100%;
+        font-size: 1rem;
+        max-width: 600px;
+        text-align: center;
+        margin-top: 10px;
+        line-height: 1.3;
+        word-break: keep-all;
+        color: #111;
+
+        /* Glassmorphism Styles */
+        background: rgba(169, 169, 169, 0.25);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        padding: 30px 40px;
+        border-radius: 24px;
+      }
+
+      .sku-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        width: 100%;
+        max-width: 1300px;
+        gap: 40px;
+        margin-right: auto;
+        padding-right: 35vw;
+        box-sizing: border-box;
+      }
+
+      .sku-symbol {
+        font-size: 12rem;
+        line-height: 1;
+        flex-shrink: 0;
+        text-shadow: 8px 8px 0 rgba(0, 0, 0, 0.1);
+      }
+
+      .sku-symbol img {
+        height: 12rem;
+        width: auto;
+        max-width: 100%;
+        display: block;
+        margin: 0 auto;
+      }
+
+      /* 문어 모양 레이아웃 (Octopus Shape) */
+      .octopus-wrapper.sku-info {
+        flex-grow: 1;
+        min-width: 600px;
+        background: transparent; /* 기존 네모 박스 제거 */
+        box-shadow: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translateY(30px);
+        opacity: 0;
+        transition: all 0.6s ease-out;
+        position: relative;
+        z-index: 4;
+      }
+
+      .pane.active .octopus-wrapper.sku-info {
+        transform: translateY(0);
+        opacity: 1;
+      }
+
+      .octo-head {
+        background: #111;
+        width: 100%;
+        border-radius: 120px 120px 30px 30px; /* 둥근 문어 머리 */
+        padding: 50px 50px 30px 50px;
+        text-align: center;
+        position: relative;
+        z-index: 3;
+        box-sizing: border-box;
+        box-shadow: 15px 15px 0 rgba(0, 0, 0, 0.2);
+      }
+
+      .sku-title {
+        font-size: 2.5rem;
+        margin: 0 0 10px 0;
+        display: inline-block;
+        border-bottom: 4px solid #fff;
+        padding-bottom: 10px;
+      }
+
+      .sku-meta {
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+      }
+
+      .sku-desc {
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin: 0;
+        word-break: keep-all;
+      }
+
+      /* 문어 다리 4개 */
+      .octo-tentacles {
+        display: flex;
+        justify-content: space-between;
+        width: 95%;
+        margin-top: -15px; /* 머리 아래로 숨기기 */
+        z-index: 2;
+        gap: 12px;
+      }
+
+      @keyframes floatTentacle {
+        0%,
+        100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(8px);
+        }
+      }
+
+      .tentacle {
+        background: #111;
+        flex: 1;
+        border-radius: 0 0 40px 40px; /* 다리 끝 모양 */
+        padding: 40px 15px 25px 15px;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.2);
+        font-size: 0.95rem;
+        line-height: 1.4;
+        word-break: keep-all;
+        transition: transform 0.3s ease;
+      }
+
+      /* 각 다리별로 애니메이션 딜레이를 주어 유기적으로 움직임 */
+      .tentacle:nth-child(1) {
+        animation: floatTentacle 3s ease-in-out infinite;
+      }
+      .tentacle:nth-child(2) {
+        animation: floatTentacle 3.5s ease-in-out infinite 0.5s;
+      }
+      .tentacle:nth-child(3) {
+        animation: floatTentacle 3.2s ease-in-out infinite 1s;
+      }
+      .tentacle:nth-child(4) {
+        animation: floatTentacle 3.8s ease-in-out infinite 0.2s;
+      }
+
+      .tentacle:hover {
+        animation-play-state: paused;
+        transform: translateY(15px) scale(1.05) !important;
+      }
+
+      .tentacle strong {
+        font-size: 1.1rem;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 2px dashed rgba(255, 255, 255, 0.2);
+        width: 80%;
+      }
+
+      .tentacle span {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      /* 문어 빨판 디테일 */
+      .tentacle-suckers {
+        display: flex;
+        gap: 6px;
+        margin-top: auto; /* 다리 맨 아래로 고정 */
+        padding-top: 15px;
+      }
+
+      .sucker {
+        width: 8px;
+        height: 8px;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      /* 결제/액션 버튼 바 (문어 몸통 하단) */
+      .octo-actions {
+        background: #111;
+        margin-top: 25px;
+        padding: 15px 35px;
+        border-radius: 50px;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 15px;
+        z-index: 3;
+        box-shadow: 15px 15px 0 rgba(0, 0, 0, 0.2);
+        width: 85%;
+        box-sizing: border-box;
+      }
+
+      .price {
+        font-size: 1.6rem;
+        color: #fff;
+        font-weight: 900;
+        letter-spacing: 1px;
+        margin-right: auto;
+      }
+
+      .buy-btn,
+      .detail-btn {
+        padding: 12px 24px;
+        border-radius: 50px;
+        font-size: 1rem;
+        font-weight: 900;
+        cursor: pointer;
+        text-transform: uppercase;
+        transition: all 0.3s;
+      }
+
+      .buy-btn {
+        background: #fff;
+        color: #111;
+        border: none;
+      }
+
+      .buy-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(255, 255, 255, 0.3);
+      }
+
+      .detail-btn {
+        background: transparent;
+        color: #fff;
+      }
+
+      .detail-btn:hover {
+        transform: scale(1.05);
+      }
+
+      .second .buy-btn {
+        color: #ccff00;
+        background: #111;
+        border: 2px solid #ccff00;
+      }
+      .second .buy-btn:hover {
+        background: #ccff00;
+        color: #111;
+      }
+      .second .detail-btn {
+        border: 2px solid #fff;
+      }
+      .second .detail-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .third .buy-btn {
+        color: #7b2cbf;
+        background: #111;
+        border: 2px solid #7b2cbf;
+      }
+      .third .buy-btn:hover {
+        background: #7b2cbf;
+        color: #fff;
+      }
+      .third .detail-btn {
+        border: 2px solid #fff;
+      }
+      .third .detail-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .fourth .buy-btn {
+        color: #ff007f;
+        background: #111;
+        border: 2px solid #ff007f;
+      }
+      .fourth .buy-btn:hover {
+        background: #ff007f;
+        color: #fff;
+      }
+      .fourth .detail-btn {
+        border: 2px solid #fff;
+      }
+      .fourth .detail-btn:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
+
+      .label-box {
+        position: fixed;
+        transform: translate(-50%, -50%);
+        padding: 10px 20px;
+        background: rgba(17, 17, 17, 0.4);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 30px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        color: #fff;
+        font-size: 1rem;
+        opacity: 0;
+        transition:
+          opacity 0.3s,
+          transform 0.3s;
+        pointer-events: none;
+        z-index: 6;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .label-box.hover {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.1);
+      }
+
+      #backBtn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 5;
+        padding: 15px 30px;
+        background: #111;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 1.2rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        transition: all 0.3s;
+      }
+      #backBtn:hover {
+        background: #333;
+        transform: scale(1.05);
+      }
+
+      /* Modal Styles */
+      #detailModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+
+      #detailModal.show {
+        display: flex;
+        opacity: 1;
+      }
+
+      .modal-content {
+        background: #111;
+        color: #fff;
+        width: 90%;
+        max-width: 1000px;
+        max-height: 90vh;
+        border-radius: 20px;
+        padding: 50px;
+        box-sizing: border-box;
+        overflow-y: auto;
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      .close-btn {
+        position: absolute;
+        top: 30px;
+        right: 40px;
+        font-size: 2.5rem;
+        cursor: pointer;
+        color: #fff;
+        transition: transform 0.3s;
+      }
+
+      .close-btn:hover {
+        transform: scale(1.2) rotate(90deg);
+      }
+
+      .modal-header {
+        border-bottom: 2px solid;
+        padding-bottom: 15px;
+        margin-bottom: 30px;
+      }
+
+      .modal-header h2 {
+        font-size: 2.5rem;
+        margin: 0 0 10px 0;
+      }
+      .modal-header p {
+        font-size: 1.1rem;
+        margin: 0;
+        color: #ccc;
+      }
+
+      .modal-section-title {
+        font-size: 1.5rem;
+        margin: 40px 0 20px 0;
+        color: #fff;
+        display: flex;
+        align-items: center;
+      }
+
+      .modal-section-title::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 24px;
+        margin-right: 15px;
+        border-radius: 4px;
+      }
+
+      .guide-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+        margin-bottom: 50px;
+      }
+
+      .step-card {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+      }
+
+      .step-card h4 {
+        margin: 0 0 15px 0;
+        font-size: 1.2rem;
+        display: flex;
+        flex-direction: column;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 10px;
+      }
+
+      .step-card h4 span {
+        font-size: 0.9rem;
+        color: #aaa;
+        margin-bottom: 5px;
+      }
+
+      .step-card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        color: #ddd;
+      }
+
+      .step-card ul li {
+        position: relative;
+        padding-left: 15px;
+        margin-bottom: 10px;
+      }
+      .step-card ul li::before {
+        content: "·";
+        position: absolute;
+        left: 0;
+        top: 0;
+        font-size: 1.5rem;
+        line-height: 1;
+      }
+      .warning-text {
+        color: #ff4444;
+        font-weight: bold;
+      }
+
+      .kit-visual-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: #1a1a1a;
+        padding: 40px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .box-label {
+        margin-bottom: 15px;
+        font-size: 1.2rem;
+        color: #fff;
+        letter-spacing: 2px;
+      }
+
+      .kit-box {
+        width: 100%;
+        max-width: 600px;
+        aspect-ratio: 24 / 19;
+        border: 4px solid #fff;
+        border-radius: 12px;
+        padding: 3%;
+        display: grid;
+        grid-template-columns: 35% 62%;
+        gap: 3%;
+        box-sizing: border-box;
+        position: relative;
+      }
+
+      .kit-box::before,
+      .kit-box::after {
+        position: absolute;
+        color: #fff;
+        font-size: 1rem;
+      }
+      .kit-box::before {
+        content: "19cm";
+        left: -50px;
+        top: 50%;
+        transform: translateY(-50%);
+      }
+      .kit-box::after {
+        content: "24cm";
+        top: -35px;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .item-bottle {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        color: #111;
+        border-radius: 4px;
+        padding: 10px;
+        box-sizing: border-box;
+      }
+
+      .main-alcohol {
+        background: #d9d9d9;
+        border: 3px solid #3399ff;
+        font-size: 1.1rem;
+      }
+      .right-section {
+        display: flex;
+        flex-direction: column;
+        gap: 8%;
+      }
+      .sub-material {
+        height: 25%;
+        background: #d9d9d9;
+        font-size: 1rem;
+      }
+      .liqueur-row {
+        height: 67%;
+        display: flex;
+        justify-content: space-between;
+        gap: 3%;
+      }
+      .liqueur-bottle {
+        flex: 1;
+        background: #d9d9d9;
+        font-size: 0.9rem;
+      }
+      .vol-text {
+        font-size: 0.8em;
+        margin-top: 5px;
+        font-weight: normal;
+      }
+      .item-name {
+        word-break: keep-all;
+      }
+
+      @media (max-width: 768px) {
+        .guide-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .sku-container {
+          padding-right: 0;
+          flex-direction: column;
+          text-align: center;
+        }
+        .octopus-wrapper.sku-info {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="inkCanvas"></canvas>
+    <canvas id="canvas"></canvas>
+    <div class="status-box">NUDGE LAB</div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.141.0/build/three.module.js",
+          "GLTFLoader": "https://unpkg.com/three@0.141.0/examples/jsm/loaders/GLTFLoader.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from "three";
+      import { GLTFLoader } from "GLTFLoader";
+
+      /* Ink Canvas Logic */
+      const inkCanvas = document.getElementById("inkCanvas");
+      const ictx = inkCanvas.getContext("2d");
+
+      function resizeInk() {
+        inkCanvas.width = window.innerWidth;
+        inkCanvas.height = window.innerHeight;
+      }
+      window.addEventListener("resize", resizeInk);
+      resizeInk();
+
+      let splatters = [];
+      let lastInkMouse = { x: -100, y: -100 };
+
+      window.addEventListener("mousemove", (e) => {
+        if (lastInkMouse.x === -100) {
+          lastInkMouse.x = e.clientX;
+          lastInkMouse.y = e.clientY;
+        }
+        const dist = Math.hypot(
+          e.clientX - lastInkMouse.x,
+          e.clientY - lastInkMouse.y,
+        );
+        if (dist > 35) {
+          createSplatter(e.clientX, e.clientY);
+          lastInkMouse.x = e.clientX;
+          lastInkMouse.y = e.clientY;
+        }
+      });
+
+      function createSplatter(x, y) {
+        let mainRadius = Math.pow(Math.random(), 3) * 45 + 5;
+        splatters.push({
+          x: x + (Math.random() - 0.5) * 20,
+          y: y + (Math.random() - 0.5) * 20,
+          r: mainRadius,
+          alpha: 1,
+          decay: Math.random() * 0.015 + 0.005,
+        });
+
+        const dropCount = Math.floor(Math.random() * 8) + 4;
+        for (let i = 0; i < dropCount; i++) {
+          let subRadius = Math.random() * (mainRadius * 0.6) + 1;
+          let spread = Math.random() * 100 + 30;
+          splatters.push({
+            x: x + (Math.random() - 0.5) * spread,
+            y: y + (Math.random() - 0.5) * spread,
+            r: subRadius,
+            alpha: 1,
+            decay: Math.random() * 0.02 + 0.01,
+          });
+        }
+      }
+
+      function animateInk() {
+        ictx.clearRect(0, 0, inkCanvas.width, inkCanvas.height);
+        for (let i = splatters.length - 1; i >= 0; i--) {
+          let p = splatters[i];
+          p.alpha -= p.decay;
+          if (p.alpha <= 0) {
+            splatters.splice(i, 1);
+            continue;
+          }
+          ictx.beginPath();
+          ictx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ictx.fillStyle = `rgba(17, 17, 17, ${p.alpha})`;
+          ictx.fill();
+        }
+        requestAnimationFrame(animateInk);
+      }
+      animateInk();
+
+      /* Three.js Logic */
+      const scene = new THREE.Scene();
+      scene.background = null;
+
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.querySelector("#canvas"),
+        antialias: true,
+        alpha: true,
+      });
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.0;
+
+      const camera = new THREE.PerspectiveCamera(
+        30,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000,
+      );
+      camera.position.set(0, 0, 18);
+
+      let targetRotationX = 0,
+        targetRotationY = 0;
+      let time = 0;
+      let activeIndex = 0;
+      let model;
+
+      const loader = new GLTFLoader();
+      loader.load(
+        "scene.gltf",
+        (gltf) => {
+          model = gltf.scene;
+          model.scale.set(0.12, 0.12, 0.12);
+          model.position.set(0, 100, 0);
+          model.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.metalness = 0.9;
+              child.material.roughness = 0.1;
+              child.material.needsUpdate = true;
+            }
+          });
+          scene.add(model);
+        },
+        undefined,
+        (error) => {
+          const geometry = new THREE.CylinderGeometry(0.6, 0.4, 2, 32);
+          const material = new THREE.MeshPhysicalMaterial({
+            color: 0x111111,
+            metalness: 1.0,
+            roughness: 0.1,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1,
+          });
+          model = new THREE.Mesh(geometry, material);
+          model.position.set(0, 0, 0);
+          scene.add(model);
+        },
+      );
+
+      const clock = new THREE.Clock();
+      const mixers = [];
+      const tentacles = [];
+      const loadTentacle = (url, posX, posY, posZ) => {
+        loader.load(
+          url,
+          (gltf) => {
+            const wrapper = new THREE.Group();
+            wrapper.position.set(posX, posY, posZ);
+            const tentacle = gltf.scene;
+            tentacle.scale.set(2.0, 2.0, 2.0);
+            tentacle.rotation.x = Math.PI / 2;
+            wrapper.add(tentacle);
+            scene.add(wrapper);
+            tentacles.push(wrapper);
+            if (gltf.animations && gltf.animations.length > 0) {
+              const mixer = new THREE.AnimationMixer(tentacle);
+              const action = mixer.clipAction(gltf.animations[0]);
+              action.play();
+              mixers.push(mixer);
+            }
+          },
+          undefined,
+          (error) => {},
+        );
+      };
+
+      const scene1Positions = [
+        [-14, 4, 0],
+        [-15, -10, 0],
+        [-7, -8, 2],
+        [-2.5, -8, 3],
+      ];
+      const scene2Positions = [
+        [2.5, -8, 3],
+        [7, -8, 2],
+        [15, -10, 0],
+        [14, 4, 0],
+      ];
+      scene1Positions.forEach((pos) => {
+        loadTentacle("scene1.gltf", pos[0], pos[1], pos[2]);
+      });
+      scene2Positions.forEach((pos) => {
+        loadTentacle("scene2.gltf", pos[0], pos[1], pos[2]);
+      });
+      loadTentacle("scene1.gltf", -10, -5, 2);
+      loadTentacle("scene2.gltf", 10, -5, 2);
+
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+      dirLight.position.set(5, 10, 10);
+      const pointLight = new THREE.PointLight(0xffffff, 2, 50);
+      pointLight.position.set(2, 5, 8);
+      scene.add(ambientLight, dirLight, pointLight);
+
+      const radius = 4;
+      const points = [];
+      const segments = 100;
+      for (let i = 0; i <= segments; i++) {
+        const angle = (i / segments) * Math.PI * 2;
+        points.push(
+          new THREE.Vector3(
+            Math.cos(angle) * radius,
+            0,
+            Math.sin(angle) * radius,
+          ),
+        );
+      }
+      const path = new THREE.CatmullRomCurve3(points, true);
+      const tubeGeometry = new THREE.TubeGeometry(
+        path,
+        segments,
+        0.02,
+        16,
+        true,
+      );
+      const tubeMaterial = new THREE.MeshBasicMaterial({
+        color: 0x111111,
+        transparent: true,
+        opacity: 0.3,
+      });
+      const ring = new THREE.Mesh(tubeGeometry, tubeMaterial);
+      ring.position.y = 0;
+      ring.rotation.x = Math.PI / 2;
+      scene.add(ring);
+
+      const crosses = [];
+      const crossMaterial = new THREE.MeshBasicMaterial({ color: 0x111111 });
+      const crossLabels = ["NUDGE LAB", "CAUTION", "WARNING", "DANGER"];
+
+      for (let i = 0; i < 4; i++) {
+        const crossGroup = new THREE.Group();
+        const horizontalBar = new THREE.Mesh(
+          new THREE.BoxGeometry(0.15, 0.03, 0.03),
+          crossMaterial,
+        );
+        const verticalBar = new THREE.Mesh(
+          new THREE.BoxGeometry(0.03, 0.15, 0.03),
+          crossMaterial,
+        );
+        crossGroup.add(horizontalBar, verticalBar);
+
+        const hitBoxGeo = new THREE.PlaneGeometry(0.6, 0.6);
+        const hitBoxMat = new THREE.MeshBasicMaterial({
+          color: 0xff0000,
+          transparent: true,
+          opacity: 0,
+          side: THREE.DoubleSide,
+        });
+        const hitBox = new THREE.Mesh(hitBoxGeo, hitBoxMat);
+        crossGroup.add(hitBox);
+
+        const angle = (i / 4) * Math.PI * 2;
+        const label = document.createElement("div");
+        label.className = "label-box";
+        label.textContent = crossLabels[i];
+        document.body.appendChild(label);
+
+        crosses.push({
+          group: crossGroup,
+          angle: angle,
+          rectMesh: hitBox,
+          targetScale: 1,
+          currentScale: 1,
+          label: label,
+        });
+        scene.add(crossGroup);
+      }
+
+      const raycaster = new THREE.Raycaster();
+      const threeMouse = new THREE.Vector2();
+
+      window.addEventListener("mousemove", (event) => {
+        threeMouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        threeMouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        const mouseX = event.clientX / window.innerWidth - 0.5;
+        const mouseY = event.clientY / window.innerHeight - 0.5;
+        targetRotationY = mouseX * Math.PI * 0.5;
+        targetRotationX = mouseY * Math.PI * 0.3;
+      });
+
+      const statusBox = document.querySelector(".status-box");
+
+      function animateThree() {
+        requestAnimationFrame(animateThree);
+        const delta = clock.getDelta();
+        time += 0.01;
+
+        mixers.forEach((mixer) => mixer.update(delta));
+        const centerPos = new THREE.Vector3(0, 0, 0);
+        tentacles.forEach((tentacle) => {
+          tentacle.lookAt(centerPos);
+        });
+
+        if (model) {
+          statusBox.textContent = crossLabels[activeIndex];
+          if (activeIndex === 0) {
+            statusBox.style.opacity = "0";
+            statusBox.style.transform = "translate(-50%, -50%) scale(0.8)";
+          } else {
+            statusBox.style.opacity = "1";
+            statusBox.style.transform = "translate(-50%, -50%) scale(1)";
+            if (activeIndex === 1) statusBox.style.color = "#ccff00";
+            if (activeIndex === 2) statusBox.style.color = "#7b2cbf";
+            if (activeIndex === 3) statusBox.style.color = "#ff007f";
+          }
+
+          model.rotation.y += (targetRotationY - model.rotation.y) * 0.05;
+          model.rotation.x += (targetRotationX - model.rotation.x) * 0.05;
+
+          const targetScale = activeIndex === 0 ? 1.0 : 1.4;
+          const currentScale = model.scale.x;
+          const newScale = currentScale + (targetScale - currentScale) * 0.05;
+          model.scale.set(newScale, newScale, newScale);
+
+          const targetOffsetX = activeIndex === 0 ? 0 : 5.5;
+          model.position.x += (targetOffsetX - model.position.x) * 0.05;
+          ring.position.x += (targetOffsetX - ring.position.x) * 0.05;
+
+          ring.position.y = Math.sin(time) * 0.2;
+          model.position.y +=
+            (Math.sin(time * 2) * 0.1 - model.position.y) * 0.05;
+
+          crosses.forEach((cross, index) => {
+            const speed = 0.3 + index * 0.1;
+            cross.angle += speed * 0.01;
+            const localX = Math.cos(cross.angle) * radius;
+            const localZ = Math.sin(cross.angle) * radius;
+
+            cross.group.position.x +=
+              (localX + targetOffsetX - cross.group.position.x) * 0.05;
+            cross.group.position.y = ring.position.y + localZ;
+            cross.group.position.z = 0;
+            cross.group.lookAt(camera.position);
+
+            raycaster.setFromCamera(threeMouse, camera);
+            const intersects = raycaster.intersectObject(cross.rectMesh);
+            cross.targetScale = intersects.length > 0 ? 3 : 1;
+            cross.currentScale +=
+              (cross.targetScale - cross.currentScale) * 0.1;
+            cross.rectMesh.scale.set(cross.currentScale, cross.currentScale, 1);
+
+            const screenPos = cross.group.position.clone();
+            screenPos.project(camera);
+            const x = (screenPos.x * 0.5 + 0.5) * window.innerWidth;
+            const y = (-screenPos.y * 0.5 + 0.5) * window.innerHeight;
+            cross.label.style.left = `${x}px`;
+            cross.label.style.top = `${y}px`;
+
+            if (intersects.length > 0) cross.label.classList.add("hover");
+            else cross.label.classList.remove("hover");
+          });
+        }
+        renderer.render(scene, camera);
+      }
+      animateThree();
+
+      let startY = 0;
+      let isDraggingSection = false;
+      const dragThreshold = 50;
+      let modalOpen = false;
+
+      function updateActivePane() {
+        document.querySelectorAll(".pane").forEach((pane, idx) => {
+          if (idx === activeIndex) pane.classList.add("active");
+          else pane.classList.remove("active");
+        });
+      }
+
+      function handleSectionChange(deltaY) {
+        if (modalOpen) return;
+        if (Math.abs(deltaY) > dragThreshold) {
+          if (deltaY > 0 && activeIndex < 3) activeIndex++;
+          else if (deltaY < 0 && activeIndex > 0) activeIndex--;
+
+          const section = document.querySelector(
+            ".pane:nth-of-type(" + (activeIndex + 1) + ")",
+          );
+          if (section) section.scrollIntoView({ behavior: "smooth" });
+          updateActivePane();
+        }
+      }
+
+      window.addEventListener("mousedown", (e) => {
+        if (
+          modalOpen ||
+          e.target.closest(".buy-btn") ||
+          e.target.closest(".detail-btn") ||
+          e.target.closest("#detailModal")
+        )
+          return;
+        startY = e.clientY;
+        isDraggingSection = true;
+      });
+
+      window.addEventListener("mouseup", (e) => {
+        if (!isDraggingSection) return;
+        isDraggingSection = false;
+        handleSectionChange(startY - e.clientY);
+      });
+
+      window.addEventListener("touchstart", (e) => {
+        if (
+          modalOpen ||
+          e.target.closest(".buy-btn") ||
+          e.target.closest(".detail-btn") ||
+          e.target.closest("#detailModal")
+        )
+          return;
+        startY = e.touches[0].clientY;
+        isDraggingSection = true;
+      });
+
+      window.addEventListener("touchend", (e) => {
+        if (!isDraggingSection) return;
+        isDraggingSection = false;
+        handleSectionChange(startY - e.changedTouches[0].clientY);
+      });
+
+      let isWheelCoolingDown = false;
+      window.addEventListener("wheel", (e) => {
+        if (modalOpen) return;
+        if (isWheelCoolingDown) return;
+        isWheelCoolingDown = true;
+        handleSectionChange(e.deltaY);
+        setTimeout(() => {
+          isWheelCoolingDown = false;
+        }, 800);
+      });
+
+      window.addEventListener("click", (e) => {
+        if (
+          modalOpen ||
+          e.target.closest(".buy-btn") ||
+          e.target.closest(".detail-btn")
+        )
+          return;
+        raycaster.setFromCamera(threeMouse, camera);
+        crosses.forEach((cross, index) => {
+          const intersects = raycaster.intersectObject(cross.rectMesh);
+          if (intersects.length > 0) {
+            activeIndex = index;
+            document
+              .querySelector(".pane:nth-of-type(" + (index + 1) + ")")
+              ?.scrollIntoView({ behavior: "smooth" });
+            updateActivePane();
+          }
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+
+      const topButton = document.getElementById("backBtn");
+      if (topButton) {
+        topButton.addEventListener("click", (event) => {
+          event.preventDefault();
+          activeIndex = 0;
+          document
+            .querySelector(".pane:nth-of-type(1)")
+            ?.scrollIntoView({ behavior: "smooth" });
+          updateActivePane();
+        });
+      }
+
+      updateActivePane();
+
+      /* Modal Data & Logic */
+      const skuData = {
+        caution: {
+          title: "CAUTION",
+          color: "#ccff00",
+          desc: "조주 난이도: ★☆☆☆☆ | 위험 요소: 신맛, 탄산",
+          step1Alert:
+            "액체가 쏟아지거나 튈 수 있으므로 평평하고 닦기 쉬운 테이블 준비",
+          mainAlc: "베이스 술 (보드카)",
+          subMat: "말린 라임, 탄산수",
+          liq1: "트리플섹",
+          liq2: "블루 큐라소",
+          liq3: "드라이 진",
+        },
+        warning: {
+          title: "WARNING",
+          color: "#7b2cbf",
+          desc: "조주 난이도: ★★★☆☆ | 위험 요소: 쓴맛 주의",
+          step1Alert:
+            "액체가 쏟아지거나 튈 수 있으므로 평평하고 닦기 쉬운 테이블 준비",
+          mainAlc: "베이스 술 (보드카)",
+          subMat: "자몽, 꿀, 허브",
+          liq1: "진 (허브)",
+          liq2: "캄파리",
+          liq3: "베르무트",
+        },
+        danger: {
+          title: "DANGER",
+          color: "#ff007f",
+          desc: "조주 난이도: ★★★★★ | 위험 요소: 높은 도수, 불",
+          step1Alert:
+            "진행 시 주변 인화성 물질 철저히 확인 및 제거. 안전을 위해 전용 내열잔 필수 사용",
+          mainAlc: "베이스 술 (보드카)",
+          subMat: "오렌지 필, 각설탕",
+          liq1: "오버프루프 럼",
+          liq2: "캄파리",
+          liq3: "진 / 트리플섹",
+        },
+      };
+
+      const detailBtns = document.querySelectorAll(".detail-btn");
+      const modal = document.getElementById("detailModal");
+      const closeBtn = document.querySelector(".close-btn");
+
+      const mTitle = document.getElementById("m-title");
+      const mDesc = document.getElementById("m-desc");
+      const mHeader = document.querySelector(".modal-header");
+      const mSectionTitles = document.querySelectorAll(".modal-section-title");
+      const mStep1Alert = document.getElementById("m-step1-alert");
+      const mMainAlc = document.getElementById("m-main-alc");
+      const mSubMat = document.getElementById("m-sub-mat");
+      const mLiq1 = document.getElementById("m-liq1");
+      const mLiq2 = document.getElementById("m-liq2");
+      const mLiq3 = document.getElementById("m-liq3");
+
+      detailBtns.forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          const skuType = e.target.getAttribute("data-sku");
+          const data = skuData[skuType];
+
+          mTitle.textContent = data.title;
+          mTitle.style.color = data.color;
+          mDesc.textContent = data.desc;
+          mHeader.style.borderColor = data.color;
+
+          mSectionTitles.forEach((el) => {
+            el.style.setProperty("--sec-color", data.color);
+            el.style.borderLeft = `8px solid ${data.color}`;
+            el.style.paddingLeft = "15px";
+          });
+
+          if (skuType === "danger") {
+            mStep1Alert.innerHTML = `<span class="warning-text">${data.step1Alert}</span>`;
+          } else {
+            mStep1Alert.textContent = data.step1Alert;
+          }
+
+          mMainAlc.textContent = data.mainAlc;
+          mSubMat.textContent = data.subMat;
+          mLiq1.textContent = data.liq1;
+          mLiq2.textContent = data.liq2;
+          mLiq3.textContent = data.liq3;
+
+          modal.classList.add("show");
+          modalOpen = true;
+        });
+      });
+
+      closeBtn.addEventListener("click", () => {
+        modal.classList.remove("show");
+        modalOpen = false;
+      });
+      window.addEventListener("click", (e) => {
+        if (e.target === modal) {
+          modal.classList.remove("show");
+          modalOpen = false;
+        }
+      });
+    </script>
+
+    <div id="container">
+      <section class="pane first">
+        <div class="intro-wrap">
+          <img src="nudge mun.png" alt="NUDGE Logo" class="main-logo" />
+          <div class="subtitle">EXPERIMENTAL PLAY LAB</div>
+          <div class="desc-text">
+            예측할 수 없는 위험과 결과의 랜덤성 속에서,<br />
+            레시피 없이 자신만의 칵테일을 만들며 선택의 결과를 직접 마주하라.
+          </div>
+        </div>
+      </section>
+
+      <section class="pane second">
+        <div class="sku-container">
+          <div class="sku-symbol">
+            <img src="Question%20mark.png" alt="Caution mark" />
+          </div>
+          <div class="sku-info octopus-wrapper">
+            <div class="octo-head" style="color: #ccff00">
+              <h2 class="sku-title">CAUTION</h2>
+              <div class="sku-meta" style="color: #aaa">
+                조주 난이도: ★☆☆☆☆ | 위험 요소: 신맛, 탄산
+              </div>
+              <p class="sku-desc" style="color: #fff">
+                낮은 난이도에서 누구나 자신의 취향대로 자유롭게 조합하며 노는
+                키트
+              </p>
+            </div>
+
+            <div class="octo-tentacles" style="color: #ddd">
+              <div class="tentacle">
+                <strong style="color: #fff">베이스술</strong>
+                <span>도수가 낮은 보드카</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">리큐르</strong>
+                <span>트리플섹, 블루 큐라소, 진</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">부재료</strong>
+                <span>라임, 탄산수</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">실험도구</strong>
+                <span>쉐이커, 지거, 믹싱 글라스, 바스푼</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="octo-actions">
+              <span class="price">₩ 32,000</span>
+              <button class="detail-btn" data-sku="caution">상세보기</button>
+              <button class="buy-btn">키트 구매하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pane third">
+        <div class="sku-container">
+          <div class="sku-symbol">
+            <img src="exclamation%20mark.png" alt="Warning mark" />
+          </div>
+          <div class="sku-info octopus-wrapper">
+            <div class="octo-head" style="color: #7b2cbf">
+              <h2 class="sku-title">WARNING</h2>
+              <div class="sku-meta" style="color: #aaa">
+                조주 난이도: ★★★☆☆ | 위험 요소: 쓴맛 주의
+              </div>
+              <p class="sku-desc" style="color: #fff">
+                중간 난이도에서 재료 선택과 조작에 따라 완전히 달라지는 실험
+                키트
+              </p>
+            </div>
+
+            <div class="octo-tentacles" style="color: #ddd">
+              <div class="tentacle">
+                <strong style="color: #fff">베이스술</strong>
+                <span>도수가 낮은 보드카</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">리큐르</strong>
+                <span>진(허브), 캄파리, 트리플섹, 베르무트</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">부재료</strong>
+                <span>자몽, 꿀, 허브</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">실험도구</strong>
+                <span>쉐이커, 지거, 믹싱 글라스, 머들러, 바스푼</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="octo-actions">
+              <span class="price">₩ 45,000</span>
+              <button class="detail-btn" data-sku="warning">상세보기</button>
+              <button class="buy-btn">키트 구매하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="pane fourth">
+        <div class="sku-container">
+          <div class="sku-symbol">
+            <img src="x%20mark.png" alt="Danger mark" />
+          </div>
+          <div class="sku-info octopus-wrapper">
+            <div class="octo-head" style="color: #ff007f">
+              <h2 class="sku-title">DANGER</h2>
+              <div class="sku-meta" style="color: #aaa">
+                조주 난이도: ★★★★★ | 위험 요소: 높은 도수, 불
+              </div>
+              <p class="sku-desc" style="color: #fff">
+                높은 난이도에서 퍼포먼스를 통해 파격적인 결과를 직접 완성하는
+                키트
+              </p>
+            </div>
+
+            <div class="octo-tentacles" style="color: #ddd">
+              <div class="tentacle">
+                <strong style="color: #fff">베이스술</strong>
+                <span>도수가 낮은 보드카</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">리큐르</strong>
+                <span>오버프루프 럼, 캄파리, 진, 트리플섹</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">부재료</strong>
+                <span>오렌지 필, 각설탕, 계피 스틱</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+              <div class="tentacle">
+                <strong style="color: #fff">실험도구</strong>
+                <span>쉐이커, 지거, 머들러, 토치, 내열잔, 바스푼</span>
+                <div class="tentacle-suckers">
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                  <div class="sucker"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="octo-actions">
+              <span class="price">₩ 58,000</span>
+              <button class="detail-btn" data-sku="danger">상세보기</button>
+              <button class="buy-btn">키트 구매하기</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- SKU 세부정보 모달 -->
+    <div id="detailModal">
+      <div class="modal-content">
+        <span class="close-btn">&times;</span>
+        <div class="modal-header">
+          <h2 id="m-title">SKU TITLE</h2>
+          <p id="m-desc">조주 난이도 및 위험 요소 설명</p>
+        </div>
+        <h3 class="modal-section-title">
+          Brand Guide : 실험실 행동 수칙 및 실행 가이드
+        </h3>
+        <div class="guide-grid">
+          <div class="step-card">
+            <h4><span>STEP 1</span> 환경 조성</h4>
+            <ul>
+              <li id="m-step1-alert">
+                액체가 쏟아지거나 튈 수 있으므로 평평하고 닦기 쉬운 테이블 준비
+              </li>
+            </ul>
+          </div>
+          <div class="step-card">
+            <h4><span>STEP 2</span> 가이드 숙지</h4>
+            <ul>
+              <li>키트 개봉 후 가장 먼저 실험노트 내용 꼼꼼히 확인</li>
+              <li>도구가 낯설다면 노트의 추천조합(실험자료) 가이드 활용</li>
+              <li>추천 조합으로 1차 실험을 진행하며 가볍게 감 익히기</li>
+            </ul>
+          </div>
+          <div class="step-card">
+            <h4><span>STEP 3</span> 조주 및 기록</h4>
+            <ul>
+              <li>지거, 쉐이커 등을 이용해 자유롭게 용량 측정 및 혼합 시도</li>
+              <li>자신만의 황금 비율이나 특이한 조합을 찾았다면 메모 필수</li>
+              <li>실험노트 내 실험 보고서란에 재료와 감상 기록</li>
+            </ul>
+          </div>
+          <div class="step-card">
+            <h4><span>STEP 4</span> 결과 직면</h4>
+            <ul>
+              <li>본 실험에는 정해진 모범 답안이 없음</li>
+              <li>비율 실패로 인한 쓴맛, 독한 술 등 모든 것이 실험의 결과</li>
+              <li>실패와 성공을 모두 즐기며 의외성의 재미 만끽하기</li>
+            </ul>
+          </div>
+        </div>
+        <h3 class="modal-section-title">패키지 스펙 및 구성물 크기 가이드</h3>
+        <div class="kit-visual-container">
+          <div class="box-label">전체 규격: 24cm x 19cm</div>
+          <div class="kit-box">
+            <div class="item-bottle main-alcohol">
+              <span class="item-name" id="m-main-alc">메인술 병</span
+              ><span class="vol-text">(200ml)</span>
+            </div>
+            <div class="right-section">
+              <div class="item-bottle sub-material">
+                <span class="item-name" id="m-sub-mat">부재료</span>
+              </div>
+              <div class="liqueur-row">
+                <div class="item-bottle liqueur-bottle">
+                  <span class="item-name" id="m-liq1">리큐르 1</span
+                  ><span class="vol-text">100ml</span>
+                </div>
+                <div class="item-bottle liqueur-bottle">
+                  <span class="item-name" id="m-liq2">리큐르 2</span
+                  ><span class="vol-text">100ml</span>
+                </div>
+                <div class="item-bottle liqueur-bottle">
+                  <span class="item-name" id="m-liq3">리큐르 3</span
+                  ><span class="vol-text">100ml</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="backBtn">RESET LAB</button>
+  </body>
+</html>
